@@ -1,0 +1,70 @@
+version: '3.7'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "5005:5005"
+    environment:
+      FLASK_APP: run.py
+      FLASK_ENV: development
+    depends_on:
+      - redis
+      - celery_worker1
+      - celery_worker2
+      - celery_worker3
+      - celery_beat
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
+  celery_worker1:
+    build: .
+    command: celery -A celery_worker.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  celery_worker2:
+    build: .
+    command: celery -A celery_worker.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  celery_worker3:
+    build: .
+    command: celery -A celery_worker.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  celery_beat:
+    build: .
+    command: celery -A celery_worker.celery beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - celery_worker1
+      - celery_worker2
+      - celery_worker3
+
+  flower:
+    build: .
+    command: celery -A celery_worker.celery flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker1
+      - celery_worker2
+      - celery_worker3
+      - celery_beat
